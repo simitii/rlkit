@@ -8,7 +8,12 @@ from rlkit.data_management.path_builder import PathBuilder
 import threading as th
 import time
 
+import numpy as np
+
 # farmport = 20099
+
+def floatify(np):
+    return [float(np[i]) for i in range(len(np))]
 
 class farmlist:
     def __init__(self):
@@ -51,14 +56,16 @@ class remoteEnv:
         self.current_path_builder = PathBuilder()
 
     def reset(self):
-        return self.fp.reset(self.id)
+        observation = self.fp.reset(self.id)
+        return np.array(observation)
 
-    def step(self,actions):
+    def step(self, actions):
+        actions = floatify(actions)
         ret = self.fp.step(self.id, actions)
         if ret == False:
             self.pretty('env not found on farm side, might been released.')
             raise Exception('env not found on farm side, might been released.')
-        return ret
+        return np.array(ret[0]),ret[1],ret[2],ret[3]
 
     def set_spaces(self):
         from gym.spaces.box import Box
