@@ -11,6 +11,7 @@ from rlkit.data_management.path_builder import PathBuilder
 from rlkit.policies.base import ExplorationPolicy
 from rlkit.samplers.in_place import InPlacePathSampler
 
+from rlkit.envs.farmer import farmer as Farmer
 
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
@@ -34,6 +35,8 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             eval_sampler=None,
             eval_policy=None,
             replay_buffer=None,
+            environment_farming=False,
+            farmlist_base=None
     ):
         """
         Base class for RL Algorithms
@@ -74,9 +77,17 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self.save_replay_buffer = save_replay_buffer
         self.save_algorithm = save_algorithm
         self.save_environment = save_environment
+        self.environment_farming = environment_farming
+        if self.environment_farming:
+            if not farmlist_base:
+                raise 'RLAlgorithm: environment_farming option should be used with farmlist_base option!'
+            self.farmlist_base = farmlist_base
+            self.farmer = Farmer(self.farmlist_base)
+
         if eval_sampler is None:
             if eval_policy is None:
                 eval_policy = exploration_policy
+            #TODO TODO TODO CHECK 
             eval_sampler = InPlacePathSampler(
                 env=env,
                 policy=eval_policy,
@@ -106,6 +117,11 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self._current_path_builder = PathBuilder()
         self._exploration_paths = []
 
+    def refarm(self):
+        if self.environment_farming:
+            del self.farmer
+            self.farmer = Farmer(self.farmlist_base)
+
     def train(self, start_epoch=0):
         self.pretrain()
         if start_epoch == 0:
@@ -123,45 +139,77 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         """
         pass
 
+    def play_one_step(self, observation=None, env=None):
+        if self.environment_farming:
+            observation = env.get_last_observation()
+
+        if not env:
+            env = self.training_env
+ 
+        action, agent_info = self._get_action_and_info(observation)
+
+        if self.render and not self.environment_farming:
+            env.render()
+        
+        next_ob, raw_reward, terminal, env_info = (
+            env.step(action)
+        )
+        
+        self._n_env_steps_total += 1
+        reward = raw_reward * self.reward_scale
+        terminal = np.array([terminal])
+        reward = np.array([reward])
+        self._handle_step(
+        observation,
+        action,
+        reward,
+        next_ob,
+        terminal,
+        agent_info=agent_info,
+        env_info=env_info,
+        env=env
+        )
+        if terminal or len(self._current_path_builder) >= self.max_path_length:
+            self._handle_rollout_ending(env)
+            observation = self._start_new_rollout(env)
+        else:
+            observation = next_ob
+
+        gt.stamp('sample')
+        self._try_to_train()
+        gt.stamp('train')
+        
+        return observation
+
+    def play_ignore(self,observation,env):
+        import threading as th
+        t = th.Thread(target=self.play_one_step, args=(None,env,), daemon=True)
+        t.start()
+        # ignore and return, let the thread run for itself.
+
     def train_online(self, start_epoch=0):
+        if not self.environment_farming:
+            observation = self._start_new_rollout()
         self._current_path_builder = PathBuilder()
-        observation = self._start_new_rollout()
         for epoch in gt.timed_for(
                 range(start_epoch, self.num_epochs),
                 save_itrs=True,
         ):
+            if self.environment_farming:
+            # acquire a remote environment
+                while True:
+                    remote_env = self.farmer.acq_env()
+                    if remote_env == False:  # no free environment
+                        pass
+                    else:
+                        break
+            
             self._start_epoch(epoch)
             for _ in range(self.num_env_steps_per_epoch):
-                action, agent_info = self._get_action_and_info(
-                    observation,
-                )
-                if self.render:
-                    self.training_env.render()
-                next_ob, raw_reward, terminal, env_info = (
-                    self.training_env.step(action)
-                )
-                self._n_env_steps_total += 1
-                reward = raw_reward * self.reward_scale
-                terminal = np.array([terminal])
-                reward = np.array([reward])
-                self._handle_step(
-                    observation,
-                    action,
-                    reward,
-                    next_ob,
-                    terminal,
-                    agent_info=agent_info,
-                    env_info=env_info,
-                )
-                if terminal or len(self._current_path_builder) >= self.max_path_length:
-                    self._handle_rollout_ending()
-                    observation = self._start_new_rollout()
+                if not self.environment_farming:
+                    observation = self.play_one_step(observation)
                 else:
-                    observation = next_ob
-
-                gt.stamp('sample')
-                self._try_to_train()
-                gt.stamp('train')
+                    self.play_ignore(remote_env)
 
             self._try_to_eval(epoch)
             gt.stamp('eval')
@@ -264,9 +312,16 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         logger.log("Started Training: {0}".format(self._can_train()))
         logger.pop_prefix()
 
-    def _start_new_rollout(self):
+    def _start_new_rollout(self, env=None):
+        # WARNING exploration_policy.reset() does NOTHING for most of the time. So it is not modified for farming.
         self.exploration_policy.reset()
-        return self.training_env.reset()
+        if not self.environment_farming:
+            return self.training_env.reset()
+        elif env:
+            return env.reset()
+        else:
+            raise '_start_new_rollout: Environment should be given in farming mode!'
+
 
     def _handle_path(self, path):
         """
@@ -311,20 +366,38 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             terminal,
             agent_info,
             env_info,
+            env = None
     ):
         """
         Implement anything that needs to happen after every step
         :return:
         """
-        self._current_path_builder.add_all(
-            observations=observation,
-            actions=action,
-            rewards=reward,
-            next_observations=next_observation,
-            terminals=terminal,
-            agent_infos=agent_info,
-            env_infos=env_info,
-        )
+        if not self.environment_farming:
+            self._current_path_builder.add_all(
+                observations=observation,
+                actions=action,
+                rewards=reward,
+                next_observations=next_observation,
+                terminals=terminal,
+                agent_infos=agent_info,
+                env_infos=env_info,
+            )
+        elif env:
+            _current_path_builder = env.current_path_builder
+            if not _current_path_builder:
+                raise '_handle_step: env object should have current_path_builder field!'
+            _current_path_builder.add_all(
+                observations=observation,
+                actions=action,
+                rewards=reward,
+                next_observations=next_observation,
+                terminals=terminal,
+                agent_infos=agent_info,
+                env_infos=env_info,
+                )
+        else:
+            raise '_handle_step: env object should given to the fnc in farming mode!'
+
         self.replay_buffer.add_sample(
             observation=observation,
             action=action,
@@ -335,17 +408,27 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             env_info=env_info,
         )
 
-    def _handle_rollout_ending(self):
+    def _handle_rollout_ending(self,env=None):
         """
         Implement anything that needs to happen after every rollout.
         """
-        self.replay_buffer.terminate_episode()
+        #WARNING terminate_episode does NOTHING so it isn't adopted to farming
+        self.replay_buffer.terminate_episode() 
         self._n_rollouts_total += 1
-        if len(self._current_path_builder) > 0:
-            self._exploration_paths.append(
-                self._current_path_builder.get_all_stacked()
-            )
-            self._current_path_builder = PathBuilder()
+        if not self.environment_farming:
+            if len(self._current_path_builder) > 0:
+                self._exploration_paths.append(
+                    self._current_path_builder.get_all_stacked()
+                )
+                self._current_path_builder = PathBuilder()
+        elif env:
+            _current_path_builder = env.current_path_builder
+            if not _current_path_builder:
+                raise '_handle_rollout_ending: env object should have current_path_builder field!'
+            self._exploration_paths.append(_current_path_builder.get_all_stacked())
+            env.newPathBuilder()
+        else:
+            raise '_handle_rollout_ending: env object should given to the fnc in farming mode!'
 
     def get_epoch_snapshot(self, epoch):
         if self.render:
