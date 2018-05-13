@@ -56,10 +56,12 @@ class remoteEnv:
         self.current_path_builder = PathBuilder()
 
     def reset(self):
+        print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
         return np.array(observation)
 
     def step(self, actions):
+        print('step' + str(self.id))
         actions = floatify(actions)
         ret = self.fp.step(self.id, actions)
         if ret == False:
