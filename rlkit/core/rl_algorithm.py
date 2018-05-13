@@ -4,6 +4,7 @@ import time
 
 import gtimer as gt
 import numpy as np
+import threading as th
 
 from rlkit.core import logger
 from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
@@ -182,7 +183,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         return observation
 
     def play_ignore(self,env):
-        import threading as th
+        print("Number of active threads: " + str(threading.active_count()))
         t = th.Thread(target=self.play_one_step, args=(None,env,), daemon=True)
         t.start()
         # ignore and return, let the thread run for itself.
