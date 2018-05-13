@@ -60,7 +60,9 @@ class remoteEnv:
         traceback.print_stack()
         print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
-        return np.array(observation)
+        observation = np.array(observation)
+        self.last_observation = observation
+        return observation
 
     def step(self, actions):
         print('step' + str(self.id))
@@ -69,7 +71,10 @@ class remoteEnv:
         if ret == False:
             self.pretty('env not found on farm side, might been released.')
             raise Exception('env not found on farm side, might been released.')
-        return np.array(ret[0]),ret[1],ret[2],ret[3]
+
+        observation = np.array(ret[0])
+        self.last_observation = observation
+        return observation,ret[1],ret[2],ret[3]
 
     def set_spaces(self):
         from gym.spaces.box import Box
@@ -98,7 +103,7 @@ class remoteEnv:
         self.fp._pyroRelease()
 
     def get_last_observation(self):
-        if self.last_observation:
+        if not self.last_observation == None:
             return self.last_observation
         else:
             return self.reset()
