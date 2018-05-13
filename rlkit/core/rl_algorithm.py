@@ -80,7 +80,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         self.save_environment = save_environment
         self.environment_farming = environment_farming
         if self.environment_farming:
-            if not farmlist_base:
+            if farmlist_base == None:
                 raise 'RLAlgorithm: environment_farming option should be used with farmlist_base option!'
             self.farmlist_base = farmlist_base
             self.farmer = Farmer(self.farmlist_base)
@@ -144,7 +144,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         if self.environment_farming:
             observation = env.get_last_observation()
 
-        if not env:
+        if env == None:
             env = self.training_env
  
         action, agent_info = self._get_action_and_info(observation)
@@ -382,9 +382,9 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 agent_infos=agent_info,
                 env_infos=env_info,
             )
-        elif env:
+        elif not env == None:
             _current_path_builder = env.get_current_path_builder()
-            if not _current_path_builder:
+            if _current_path_builder == None:
                 raise '_handle_step: env object should have current_path_builder field!'
             _current_path_builder.add_all(
                 observations=observation,
@@ -423,7 +423,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 self._current_path_builder = PathBuilder()
         elif env:
             _current_path_builder = env.get_current_path_builder()
-            if not _current_path_builder:
+            if _current_path_builder == None:
                 raise '_handle_rollout_ending: env object should have current_path_builder field!'
             self._exploration_paths.append(_current_path_builder.get_all_stacked())
             env.newPathBuilder()
