@@ -184,6 +184,9 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         else:
             observation = next_ob
 
+        if self.environment_farming:
+            self.farmer.add_free_env(env)
+
         gt.stamp('sample')
         self._try_to_train()
         gt.stamp('train')

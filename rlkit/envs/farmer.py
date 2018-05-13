@@ -121,6 +121,7 @@ class farmer:
         print('(farmer) '+str(s))
 
     def __init__(self, farmlist_base):
+        self.free_envs = []
         self.farmlist_base = farmlist_base
         self.reload_addr()
         for idx,address in enumerate(addresses):
@@ -136,12 +137,19 @@ class farmer:
                 continue
             fp._pyroRelease()
 
+    def add_free_env(self,env):
+        self.free_envs.append(env)
+
     # find non-occupied instances from all available farms
     def acq_env(self):
         ret = False
 
-        import random # randomly sample to achieve load averaging
-        # l = list(enumerate(addresses))
+        if len(self.free_envs) > 0:
+            ret = self.free_envs.pop()
+            return ret
+        
+        import random 
+        # randomly sample to achieve load averaging
         l = list(range(len(addresses)))
         random.shuffle(l)
 
