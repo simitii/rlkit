@@ -176,9 +176,9 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         else:
             current_path_builder = env.get_current_path_builder()
 
+        print('current_path_buinder_len: ' + str(len(current_path_builder)))
         if terminal or len(current_path_builder) >= self.max_path_length:
             print('terminal: ' + str(terminal))
-            print('current_path_buinder_len: ' + str(len(current_path_builder)))
             self._handle_rollout_ending(env)
             observation = self._start_new_rollout(env)
         else:
