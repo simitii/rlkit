@@ -56,6 +56,8 @@ class remoteEnv:
         self.current_path_builder = PathBuilder()
 
     def reset(self):
+        import traceback
+        traceback.print_stack()
         print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
         return np.array(observation)
