@@ -195,21 +195,20 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         for epoch in gt.timed_for(
                 range(start_epoch, self.num_epochs),
                 save_itrs=True,
-        ):
-            if self.environment_farming:
-            # acquire a remote environment
-                while True:
-                    remote_env = self.farmer.acq_env()
-                    if remote_env == False:  # no free environment
-                        pass
-                    else:
-                        break
-            
+        ):  
             self._start_epoch(epoch)
+
             for _ in range(self.num_env_steps_per_epoch):
                 if not self.environment_farming:
                     observation = self.play_one_step(observation)
                 else:
+                    # acquire a remote environment
+                    while True:
+                        remote_env = self.farmer.acq_env()
+                        if remote_env == False:  # no free environment
+                            pass
+                        else:
+                            break
                     self.play_ignore(remote_env)
 
             self._try_to_eval(epoch)
