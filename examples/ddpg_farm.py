@@ -13,9 +13,28 @@ from rlkit.torch.networks import FlattenMlp, TanhMlpPolicy
 from rlkit.torch.ddpg.ddpg import DDPG
 import rlkit.torch.pytorch_util as ptu
 
+from rlkit.envs.farmer import farmer as Farmer
+
+def acq_remote_env(farmer):
+    # acquire a remote environment
+    while True:
+        remote_env = farmer.acq_env()
+        if remote_env == False:  # no free environment
+            pass
+        else:
+            break
+    remote_env.set_spaces()
+    print('action space', remote_env.action_space)
+    print('observation space', remote_env.observation_space)
+    return remote_env
 
 def experiment(variant):
-    env = NormalizedBoxEnv(gym.make('HalfCheetah-v1'))
+    farmlist_base = [('123.123.123.123', 4)]
+
+    farmer = Farmer(farmlist_base)
+    environment = acq_remote_env(farmer)
+    env = NormalizedBoxEnv(environment)
+
     es = OUStrategy(action_space=env.action_space)
     obs_dim = env.observation_space.low.size
     action_dim = env.action_space.low.size

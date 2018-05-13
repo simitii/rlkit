@@ -31,33 +31,6 @@ def acq_remote_env(farmer):
     return remote_env
 
 
-class Deneme:
-    def step(self, *argv, **kargs):
-        print("step is called!")
-        #traceback.print_stack()
-        observation = np.random.rand(30)
-        reward = np.random.rand(1)
-        done = False
-        info = "poku yedik"
-        return observation, reward, done, info
-
-    def reset(self, *argv, **kargs):
-        print("reset is called!")
-        #traceback.print_stack()
-        observation = np.random.rand(30)
-        return observation
-
-    def __init__(self):
-        noutput = 18
-        action_space = [0.0] * noutput, [1.0] * noutput
-        action_space = gym.spaces.Box(
-            np.array(action_space[0]), np.array(action_space[1]))
-        self.action_space = action_space
-        noutput = 30
-        observation_space = [0.0] * noutput, [1.0] * noutput
-        observation_space = gym.spaces.Box(
-            np.array(observation_space[0]), np.array(observation_space[1]))
-        self.observation_space = observation_space
 
 def experiment(variant):
 
@@ -65,10 +38,7 @@ def experiment(variant):
 
     farmer = Farmer(farmlist_base)
     environment = acq_remote_env(farmer)
-    #environment = Deneme()
     env = NormalizedBoxEnv(environment)
-
-    #TODO environment.release()
 
     obs_dim = int(np.prod(env.observation_space.shape))
     action_dim = int(np.prod(env.action_space.shape))
@@ -95,6 +65,8 @@ def experiment(variant):
         policy=policy,
         qf=qf,
         vf=vf,
+        environment_farming=True,
+        farmlist_base=farmlist_base,
         **variant['algo_params']
     )
     if ptu.gpu_enabled():

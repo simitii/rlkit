@@ -181,7 +181,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         
         return observation
 
-    def play_ignore(self,observation,env):
+    def play_ignore(self,env):
         import threading as th
         t = th.Thread(target=self.play_one_step, args=(None,env,), daemon=True)
         t.start()
