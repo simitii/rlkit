@@ -183,7 +183,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         return observation
 
     def play_ignore(self,env):
-        print("Number of active threads: " + str(threading.active_count()))
+        print("Number of active threads: " + str(th.active_count()))
         t = th.Thread(target=self.play_one_step, args=(None,env,), daemon=True)
         t.start()
         # ignore and return, let the thread run for itself.
