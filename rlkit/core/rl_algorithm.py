@@ -383,7 +383,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 env_infos=env_info,
             )
         elif env:
-            _current_path_builder = env.current_path_builder
+            _current_path_builder = env.get_current_path_builder()
             if not _current_path_builder:
                 raise '_handle_step: env object should have current_path_builder field!'
             _current_path_builder.add_all(
@@ -422,7 +422,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 )
                 self._current_path_builder = PathBuilder()
         elif env:
-            _current_path_builder = env.current_path_builder
+            _current_path_builder = env.get_current_path_builder()
             if not _current_path_builder:
                 raise '_handle_rollout_ending: env object should have current_path_builder field!'
             self._exploration_paths.append(_current_path_builder.get_all_stacked())

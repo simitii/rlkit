@@ -12,8 +12,8 @@ import numpy as np
 
 # farmport = 20099
 
-def floatify(np):
-    return [float(np[i]) for i in range(len(np))]
+def floatify(n_p):
+    return [float(n_p[i]) for i in range(len(n_p))]
 
 class farmlist:
     def __init__(self):
@@ -101,6 +101,9 @@ class remoteEnv:
     
     def newPathBuilder(self):
         self.current_path_builder = PathBuilder()
+
+    def get_current_path_builder(self):
+        return self.current_path_builder
     
     def __del__(self):
         self.rel()
