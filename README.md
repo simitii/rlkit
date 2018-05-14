@@ -1,4 +1,7 @@
-README last updated on: 02/19/2018
+## Bugs:
+- Dinamic allocation of Eval_Sampler(environment for it) - **FIXED**
+- Environment allocation bugs - **FIXED** 
+- Segmentation fault (interesting :D) - **BUG**
 
 # rlkit
 Reinforcement learning framework and algorithms implemented in PyTorch.

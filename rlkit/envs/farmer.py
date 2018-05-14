@@ -60,6 +60,10 @@ class remoteEnv:
         traceback.print_stack()
         print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
+        if (observation == False):
+            self.pretty('env not found on farm side, might been released.')
+            raise Exception('env not found on farm side, might been released.')
+            
         observation = np.array(observation)
         self.last_observation = observation
         return observation
@@ -75,6 +79,11 @@ class remoteEnv:
         observation = np.array(ret[0])
         self.last_observation = observation
         return observation,ret[1],ret[2],ret[3]
+
+    def is_alive(self):
+        print('is_alive' + str(self.id))
+        return self.fp.is_alive(self.id)
+    
 
     def set_spaces(self):
         from gym.spaces.box import Box
@@ -149,15 +158,18 @@ class farmer:
     def acq_env(self):
         ret = False
 
-        if len(self.free_envs) > 0:
+        while (len(self.free_envs) > 0):
             ret = self.free_envs.pop()
-            return ret
+            if ret.is_alive() == True:
+                return ret
+            else:
+                continue
         
         import random 
         # randomly sample to achieve load averaging
         l = list(range(len(addresses)))
         random.shuffle(l)
-
+        
         for idx in l:
             time.sleep(0.1)
             address = addresses[idx]
@@ -192,5 +204,12 @@ class farmer:
                         break
 
         # ret is False if none of the farms has free ei
+        return ret
+
+    def force_acq_env(self):
+        ret = False
+        while(ret == False):
+            ret = self.acq_env()
+            
         return ret
 

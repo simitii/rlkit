@@ -88,13 +88,15 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         if eval_sampler is None:
             if eval_policy is None:
                 eval_policy = exploration_policy
-            #TODO TODO TODO CHECK 
-            eval_sampler = InPlacePathSampler(
-                env=env,
-                policy=eval_policy,
-                max_samples=self.num_steps_per_eval + self.max_path_length,
-                max_path_length=self.max_path_length,
-            )
+            if not self.environment_farming:
+                eval_sampler = InPlacePathSampler(
+                    env=env,
+                    policy=eval_policy,
+                    max_samples=self.num_steps_per_eval + self.max_path_length,
+                    max_path_length=self.max_path_length,
+                )
+            # For environment_farming environments managed dinamically. Therefore, eval_sampler should be created at time of sampling.
+
         self.eval_policy = eval_policy
         self.eval_sampler = eval_sampler
 
@@ -185,6 +187,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             observation = next_ob
 
         if self.environment_farming:
+            print('env add called')
             self.farmer.add_free_env(env)
 
         gt.stamp('sample')
@@ -214,12 +217,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                     observation = self.play_one_step(observation)
                 else:
                     # acquire a remote environment
-                    while True:
-                        remote_env = self.farmer.acq_env()
-                        if remote_env == False:  # no free environment
-                            pass
-                        else:
-                            break
+                    remote_env = self.farmer.force_acq_env()
                     self.play_ignore(remote_env)
 
             self._try_to_eval(epoch)
@@ -237,6 +235,17 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
     def _try_to_eval(self, epoch):
         logger.save_extra_data(self.get_extra_data_to_save(epoch))
         if self._can_evaluate():
+            if self.environment_farming:
+                # Create new new eval_sampler each evaluation time in order to avoid relesed environment problem
+                env_for_eval_sampler = self.farmer.force_acq_env()
+                print(env_for_eval_sampler)
+                self.eval_sampler = InPlacePathSampler(
+                    env=env_for_eval_sampler,
+                    policy=self.eval_policy,
+                    max_samples=self.num_steps_per_eval + self.max_path_length,
+                    max_path_length=self.max_path_length,
+                )
+            
             self.evaluate(epoch)
 
             params = self.get_epoch_snapshot(epoch)
