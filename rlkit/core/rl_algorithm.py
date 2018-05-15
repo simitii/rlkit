@@ -178,21 +178,16 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         else:
             current_path_builder = env.get_current_path_builder()
 
-        print('current_path_buinder_len: ' + str(len(current_path_builder)))
         if terminal or len(current_path_builder) >= self.max_path_length:
-            print('terminal: ' + str(terminal))
             self._handle_rollout_ending(env)
             observation = self._start_new_rollout(env)
         else:
             observation = next_ob
 
         if self.environment_farming:
-            print('env add called')
             self.farmer.add_free_env(env)
 
         gt.stamp('sample')
-        self._try_to_train()
-        gt.stamp('train')
         
         return observation
 
@@ -220,7 +215,12 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                     remote_env = self.farmer.force_acq_env()
                     self.play_ignore(remote_env)
 
-            self._try_to_eval(epoch)
+                # Training out of threads
+                self._try_to_train()
+                gt.stamp('train')
+
+            if epoch % 10 == 0:
+                self._try_to_eval(epoch)
             gt.stamp('eval')
             self._end_epoch()
 
@@ -247,7 +247,10 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 )
             
             self.evaluate(epoch)
-
+            
+            # Adding env back to free_env list
+            self.farmer.add_free_env(env_for_eval_sampler)
+            
             params = self.get_epoch_snapshot(epoch)
             logger.save_itr_params(epoch, params)
             table_keys = logger.get_table_key_set()

@@ -56,8 +56,6 @@ class remoteEnv:
         self.current_path_builder = PathBuilder()
 
     def reset(self):
-        import traceback
-        traceback.print_stack()
         print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
         if (observation == False):
@@ -152,7 +150,9 @@ class farmer:
             fp._pyroRelease()
 
     def add_free_env(self,env):
+        print("env add!!!")
         self.free_envs.append(env)
+        print("env added")
 
     # find non-occupied instances from all available farms
     def acq_env(self):

@@ -95,6 +95,8 @@ def remove_tabular_output(file_name):
 def set_snapshot_dir(dir_name):
     global _snapshot_dir
     _snapshot_dir = dir_name
+    if not os.path.isdir(dir_name):
+        os.makedirs(dir_name)
 
 
 def get_snapshot_dir():
