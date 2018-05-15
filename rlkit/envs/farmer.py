@@ -80,7 +80,10 @@ class remoteEnv:
 
     def is_alive(self):
         print('is_alive' + str(self.id))
-        return self.fp.is_alive(self.id)
+        try: 
+            return self.fp.is_alive(self.id)
+        except:
+            return False
     
 
     def set_spaces(self):
