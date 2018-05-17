@@ -10,7 +10,11 @@ import time
 
 import numpy as np
 
-# farmport = 20099
+farmport = 20099
+
+def set_farm_port(port):
+    global farmport
+    farmport = port
 
 def floatify(n_p):
     return [float(n_p[i]) for i in range(len(n_p))]
@@ -20,7 +24,7 @@ class farmlist:
         self.list = []
 
     def generate(self):
-        farmport = 20099
+        global farmport
         def addressify(farmaddr,port):
             return farmaddr+':'+str(port)
         addresses = [addressify(farm[0],farmport) for farm in self.list]

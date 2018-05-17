@@ -1,25 +1,79 @@
 name: rlkit
 channels:
-- kne  # for pybox2d
-- pytorch
-- anaconda  # for mkl
+  - pytorch
+  - kne
+  - anaconda
+  - defaults
 dependencies:
-- joblib=0.9.4
-- mako=1.0.6=py35_0
-- matplotlib=2.0.2=np111py35_0
-- mkl=2018.0.2  # Need to add explicit dependence for pytorch
-- numba=0.35.0=np111py35_0
-- numpy=1.11.3
-- path.py=10.3.1=py35_0
-- pybox2d=2.3.1post2=py35_0
-- python=3.5.2
-- python-dateutil=2.6.1=py35_0
-- pytorch-cpu=0.3.0
-- scipy=1.0.1
-- patchelf
-- pip:
-  - cloudpickle==0.5.2
-  - gym[all]==0.10.5
-  - gitpython==2.1.7
-  - gtimer==1.0.0b5
-  - pygame==1.9.2
+  - cffi=1.11.5=py35h9745a5d_0
+  - cycler=0.10.0=py35hc4d5149_0
+  - dbus=1.13.2=h714fa37_1
+  - expat=2.2.5=he0dffb1_0
+  - fontconfig=2.12.1=3
+  - freetype=2.5.5=2
+  - glib=2.56.1=h000015b_0
+  - gst-plugins-base=1.14.0=hbbd80ab_1
+  - gstreamer=1.14.0=hb453b48_1
+  - icu=54.1=0
+  - intel-openmp=2018.0.0=8
+  - joblib=0.9.4=py35_0
+  - jpeg=9b=h024ee3a_2
+  - libffi=3.2.1=hd88cf55_4
+  - libgcc=7.2.0=h69d50b8_2
+  - libgcc-ng=7.2.0=hdf63c60_3
+  - libgfortran-ng=7.2.0=hdf63c60_3
+  - libiconv=1.14=0
+  - libpng=1.6.34=hb9fc6fc_0
+  - libstdcxx-ng=7.2.0=hdf63c60_3
+  - libxcb=1.13=h1bed415_1
+  - libxml2=2.9.4=0
+  - llvmlite=0.20.0=py35_0
+  - mako=1.0.6=py35_0
+  - markupsafe=1.0=py35h4f4fcf6_1
+  - matplotlib=2.0.2=np111py35_0
+  - mkl=2018.0.2=1
+  - numba=0.35.0=np111py35_0
+  - numpy=1.11.3=py35h3dfced4_4
+  - patchelf=0.9=hf79760b_2
+  - path.py=10.3.1=py35_0
+  - pcre=8.42=h439df22_0
+  - pip=10.0.1=py35_0
+  - pycparser=2.18=py35h61b3040_1
+  - pyparsing=2.2.0=py35h041ed72_1
+  - pyqt=5.6.0=py35_2
+  - python=3.5.2=0
+  - python-dateutil=2.6.1=py35_0
+  - pytz=2018.4=py35_0
+  - qt=5.6.2=5
+  - readline=6.2=2
+  - scipy=1.0.1=py35hfc37229_0
+  - setuptools=39.1.0=py35_0
+  - sip=4.19.8=py35hf484d3e_0
+  - six=1.11.0=py35h423b573_1
+  - sqlite=3.13.0=0
+  - tk=8.5.18=0
+  - wheel=0.31.0=py35_0
+  - xz=5.2.3=h5e939de_4
+  - zlib=1.2.11=ha838bed_2
+  - ca-certificates=2018.03.07=0
+  - certifi=2018.4.16=py35_0
+  - openssl=1.0.2o=h20670df_0
+  - pyyaml=3.12=py35h46ef4ae_1
+  - yaml=0.1.7=had09818_2
+  - pybox2d=2.3.1post2=py35_0
+  - pytorch-cpu=0.3.0=py35_cpuh5cbe2a2_4
+  - pip:
+    - box2d==2.3.1
+    - chardet==3.0.4
+    - future==0.16.0
+    - gtimer==1.0.0b5
+    - gym==0.10.5
+    - idna==2.6
+    - pygame==1.9.2
+    - pyglet==1.3.2
+    - pyro4==4.71
+    - requests==2.18.4
+    - serpent==1.24
+    - torch==0.3.0.post4
+    - urllib3==1.22
+
