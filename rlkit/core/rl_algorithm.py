@@ -238,7 +238,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                         currently_evaluating = True
                         break
                 if not currently_evaluating:
-                    t = th.Thread(target=self._try_to_eval, args=(epoch)
+                    t = th.Thread(target=self._try_to_eval, args=(epoch),
                                   name=evaluating_thread_name, daemon=True)
                     t.start()
             

@@ -14,6 +14,11 @@ from rlkit.torch.ddpg.ddpg import DDPG
 import rlkit.torch.pytorch_util as ptu
 
 from rlkit.envs.farmer import farmer as Farmer
+from rlkit.envs.farmer import set_farm_port
+
+from rlkit.core import logger
+
+farmlist_base = [('0.0.0.0', 15)]
 
 def acq_remote_env(farmer):
     # acquire a remote environment
