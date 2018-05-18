@@ -60,7 +60,6 @@ class remoteEnv:
         self.current_path_builder = PathBuilder()
 
     def reset(self):
-        print('reset' + str(self.id))
         observation = self.fp.reset(self.id)
         if (observation == False):
             self.pretty('env not found on farm side, might been released.')
@@ -71,7 +70,6 @@ class remoteEnv:
         return observation
 
     def step(self, actions):
-        print('step' + str(self.id))
         actions = floatify(actions)
         ret = self.fp.step(self.id, actions)
         if ret == False:
@@ -83,7 +81,6 @@ class remoteEnv:
         return observation,ret[1],ret[2],ret[3]
 
     def is_alive(self):
-        print('is_alive' + str(self.id))
         try: 
             return self.fp.is_alive(self.id)
         except:
@@ -157,9 +154,7 @@ class farmer:
             fp._pyroRelease()
 
     def add_free_env(self,env):
-        print("env add!!!")
         self.free_envs.append(env)
-        print("env added")
 
     # find non-occupied instances from all available farms
     def acq_env(self):

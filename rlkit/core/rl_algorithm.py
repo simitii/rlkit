@@ -215,12 +215,33 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                     remote_env = self.farmer.force_acq_env()
                     self.play_ignore(remote_env)
 
-                # Training out of threads
-                self._try_to_train()
+                # Training in another threads
+                currently_training = False
+                training_thread_name = "TRAINING_THREAD"
+                for thread in th.enumerate():
+                    if(thread.getName() == training_thread_name):
+                        currently_training = True
+                        break
+                if not currently_training:
+                    t = th.Thread(target=self._try_to_train,
+                                  name=training_thread_name, daemon=True)
+                    t.start()
                 gt.stamp('train')
 
             if epoch % 10 == 0:
-                self._try_to_eval(epoch)
+                print("Evaluation")
+                # Evaluate in another threads
+                currently_evaluating = False
+                evaluating_thread_name = "EVALUATION_THREAD"
+                for thread in th.enumerate():
+                    if(thread.getName() == evaluating_thread_name):
+                        currently_evaluating = True
+                        break
+                if not currently_evaluating:
+                    t = th.Thread(target=self._try_to_eval, args=(epoch)
+                                  name=evaluating_thread_name, daemon=True)
+                    t.start()
+            
             gt.stamp('eval')
             self._end_epoch()
 
@@ -238,7 +259,6 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             if self.environment_farming:
                 # Create new new eval_sampler each evaluation time in order to avoid relesed environment problem
                 env_for_eval_sampler = self.farmer.force_acq_env()
-                print(env_for_eval_sampler)
                 self.eval_sampler = InPlacePathSampler(
                     env=env_for_eval_sampler,
                     policy=self.eval_policy,

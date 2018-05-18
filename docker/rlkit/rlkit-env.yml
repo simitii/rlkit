@@ -61,7 +61,7 @@ dependencies:
   - pyyaml=3.12=py35h46ef4ae_1
   - yaml=0.1.7=had09818_2
   - pybox2d=2.3.1post2=py35_0
-  - pytorch-cpu=0.3.0=py35_cpuh5cbe2a2_4
+  - pytorch-cpu=0.4.0
   - pip:
     - box2d==2.3.1
     - chardet==3.0.4
