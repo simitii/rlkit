@@ -14,6 +14,7 @@ from rlkit.samplers.in_place import InPlacePathSampler
 
 from rlkit.envs.farmer import farmer as Farmer
 
+
 class RLAlgorithm(metaclass=abc.ABCMeta):
     def __init__(
             self,
@@ -148,31 +149,31 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
 
         if env == None:
             env = self.training_env
- 
+
         action, agent_info = self._get_action_and_info(observation)
 
         if self.render and not self.environment_farming:
             env.render()
-        
+
         next_ob, raw_reward, terminal, env_info = (
             env.step(action)
         )
-        
+
         self._n_env_steps_total += 1
         reward = raw_reward * self.reward_scale
         terminal = np.array([terminal])
         reward = np.array([reward])
         self._handle_step(
-        observation,
-        action,
-        reward,
-        next_ob,
-        terminal,
-        agent_info=agent_info,
-        env_info=env_info,
-        env=env
+            observation,
+            action,
+            reward,
+            next_ob,
+            terminal,
+            agent_info=agent_info,
+            env_info=env_info,
+            env=env
         )
-        
+
         if not self.environment_farming:
             current_path_builder = self._current_path_builder
         else:
@@ -188,12 +189,13 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             self.farmer.add_free_env(env)
 
         gt.stamp('sample')
-        
+
         return observation
 
-    def play_ignore(self,env):
+    def play_ignore(self, env):
         print("Number of active threads: " + str(th.active_count()))
-        t = th.Thread(target=self.play_one_step, args=(None,env,), daemon=True)
+        t = th.Thread(target=self.play_one_step,
+                      args=(None, env,), daemon=True)
         t.start()
         # ignore and return, let the thread run for itself.
 
@@ -204,7 +206,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         for epoch in gt.timed_for(
                 range(start_epoch, self.num_epochs),
                 save_itrs=True,
-        ):  
+        ):
             self._start_epoch(epoch)
 
             for _ in range(self.num_env_steps_per_epoch):
@@ -215,33 +217,12 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                     remote_env = self.farmer.force_acq_env()
                     self.play_ignore(remote_env)
 
-                # Training in another threads
-                currently_training = False
-                training_thread_name = "TRAINING_THREAD"
-                for thread in th.enumerate():
-                    if(thread.getName() == training_thread_name):
-                        currently_training = True
-                        break
-                if not currently_training:
-                    t = th.Thread(target=self._try_to_train,
-                                  name=training_thread_name, daemon=True)
-                    t.start()
+                # Training out of threads
+                self._try_to_train()
                 gt.stamp('train')
 
             if epoch % 10 == 0:
-                print("Evaluation")
-                # Evaluate in another threads
-                currently_evaluating = False
-                evaluating_thread_name = "EVALUATION_THREAD"
-                for thread in th.enumerate():
-                    if(thread.getName() == evaluating_thread_name):
-                        currently_evaluating = True
-                        break
-                if not currently_evaluating:
-                    t = th.Thread(target=self._try_to_eval, args=(epoch),
-                                  name=evaluating_thread_name, daemon=True)
-                    t.start()
-            
+                self._try_to_eval(epoch)
             gt.stamp('eval')
             self._end_epoch()
 
@@ -259,18 +240,19 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             if self.environment_farming:
                 # Create new new eval_sampler each evaluation time in order to avoid relesed environment problem
                 env_for_eval_sampler = self.farmer.force_acq_env()
+                print(env_for_eval_sampler)
                 self.eval_sampler = InPlacePathSampler(
                     env=env_for_eval_sampler,
                     policy=self.eval_policy,
                     max_samples=self.num_steps_per_eval + self.max_path_length,
                     max_path_length=self.max_path_length,
                 )
-            
+
             self.evaluate(epoch)
-            
+
             # Adding env back to free_env list
             self.farmer.add_free_env(env_for_eval_sampler)
-            
+
             params = self.get_epoch_snapshot(epoch)
             logger.save_itr_params(epoch, params)
             table_keys = logger.get_table_key_set()
@@ -316,11 +298,9 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         One annoying thing about the logger table is that the keys at each
         iteration need to be the exact same. So unless you can compute
         everything, skip evaluation.
-
         A common example for why you might want to skip evaluation is that at
         the beginning of training, you may not have enough data for a
         validation and training set.
-
         :return:
         """
         return (
@@ -365,7 +345,6 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
         else:
             raise '_start_new_rollout: Environment should be given in farming mode!'
 
-
     def _handle_path(self, path):
         """
         Naive implementation: just loop through each transition.
@@ -409,7 +388,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             terminal,
             agent_info,
             env_info,
-            env = None
+            env=None
     ):
         """
         Implement anything that needs to happen after every step
@@ -437,7 +416,7 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
                 terminals=terminal,
                 agent_infos=agent_info,
                 env_infos=env_info,
-                )
+            )
         else:
             raise '_handle_step: env object should given to the fnc in farming mode!'
 
@@ -451,12 +430,12 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             env_info=env_info,
         )
 
-    def _handle_rollout_ending(self,env=None):
+    def _handle_rollout_ending(self, env=None):
         """
         Implement anything that needs to happen after every rollout.
         """
         #WARNING terminate_episode does NOTHING so it isn't adopted to farming
-        self.replay_buffer.terminate_episode() 
+        self.replay_buffer.terminate_episode()
         self._n_rollouts_total += 1
         if not self.environment_farming:
             if len(self._current_path_builder) > 0:
@@ -468,7 +447,8 @@ class RLAlgorithm(metaclass=abc.ABCMeta):
             _current_path_builder = env.get_current_path_builder()
             if _current_path_builder == None:
                 raise '_handle_rollout_ending: env object should have current_path_builder field!'
-            self._exploration_paths.append(_current_path_builder.get_all_stacked())
+            self._exploration_paths.append(
+                _current_path_builder.get_all_stacked())
             env.newPathBuilder()
         else:
             raise '_handle_rollout_ending: env object should given to the fnc in farming mode!'
